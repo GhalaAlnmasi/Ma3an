@@ -38,9 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
-    'accounts',
-    
-    
+    'accounts',   
+    'traveler',
 ]
 
 MIDDLEWARE = [
@@ -119,3 +118,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+
+# Payment Test S
+
+STRIPE_SECRET_KEY = "sk_test_xxxxxxxxxxxxx"
+STRIPE_PUBLISHABLE_KEY = "pk_test_xxxxxxxxxxxxx"
