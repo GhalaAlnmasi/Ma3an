@@ -76,7 +76,7 @@ class GeofenceEvent(models.Model):
     ]
 
     traveler = models.ForeignKey(
-        "traveler.Traveler",
+        "accounts.Traveler",
         on_delete=models.CASCADE,
         related_name="geofence_events"
     )
