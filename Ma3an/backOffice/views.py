@@ -24,7 +24,7 @@ def dashboard(request):
 
 
 @login_required
-@admin_only
+# @admin_only
 def manage_agencies(request):
     q = request.GET.get('q', '').strip()
     status = request.GET.get('status', 'all').strip()
@@ -60,7 +60,7 @@ def manage_agencies(request):
 
 
 @login_required
-@admin_only
+# @admin_only
 def approve_agency(request, agency_id):
     agency = get_object_or_404(TravelAgency, id=agency_id)
 
@@ -80,8 +80,35 @@ def approve_agency(request, agency_id):
     return redirect('manage_agencies')
 
 
+
 @login_required
-@admin_only
+def manage_subscriptions(request):
+    subscriptions = Subscription.objects.all()
+    return render(request, 'backOffice/subscriptions.html', {'subscriptions': subscriptions})
+
+
+@login_required
+def users_list(request):
+    users = User.objects.all()
+    return render(request, 'backOffice/users.html', {'users': users})
+
+
+@login_required
+def system_security(request):
+    return render(request, 'backOffice/security.html')
+
+
+
+
+@login_required
+# @admin_only
+def agency_detail(request, agency_id):
+    agency = get_object_or_404(TravelAgency.objects.select_related('profile', 'profile__user'), id=agency_id)
+    return render(request, 'backOffice/agency_detail.html', {'agency': agency})
+
+
+@login_required
+# @admin_only
 @require_POST
 def reject_agency(request, agency_id):
     agency = get_object_or_404(TravelAgency, id=agency_id)

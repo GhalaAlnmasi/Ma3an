@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+# from accounts.models import TourGuide
 from accounts.models import TourGuide
+from agency.models import Agency, Subscription
+
 
 
 # class Agency(models.Model):
@@ -22,25 +25,30 @@ class Tour(models.Model):
     description = models.TextField()
     country = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
-    travelers = models.PositiveIntegerField()
+
+    # هذا هو الـ Capacity
+    travelers = models.PositiveIntegerField(
+        help_text="Max capacity (number of travelers)"
+    )
+
     price = models.DecimalField(max_digits=10, decimal_places=2)
     start_date = models.DateField()
     end_date = models.DateField()
-    days = models.PositiveIntegerField(default=1)  # عدد الأيام
+    days = models.PositiveIntegerField(default=1)
 
-    tour_guide = models.ForeignKey(
-        TourGuide,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+    tour_guide = models.ForeignKey("accounts.TourGuide", on_delete=models.SET_NULL, null=True, blank=True)
     image = models.ImageField(upload_to='tour_images/', null=True, blank=True)
 
     def __str__(self):
         return self.name
 
+
 class TourSchedule(models.Model):
-    tour = models.ForeignKey(Tour, on_delete=models.CASCADE, related_name='schedules')
+    tour = models.ForeignKey(
+        Tour,
+        on_delete=models.CASCADE,
+        related_name='schedules'
+    )
     day_number = models.PositiveIntegerField()
     start_time = models.TimeField()
     end_time = models.TimeField()
@@ -99,3 +107,38 @@ class GeofenceEvent(models.Model):
 
     def __str__(self):
         return f"{self.traveler} {self.event_type} {self.geofence}"
+
+
+#Subscription
+
+class Subscription(models.Model):
+    PLAN_CHOICES = [
+        ('basic', 'Basic'),
+        ('standard', 'Standard'),
+        ('premium', 'Premium'),
+    ]
+    subscriptionType = models.CharField(max_length=20, choices=PLAN_CHOICES)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    tours_limit = models.IntegerField(null=True, blank=True)
+    supervisors_limit = models.IntegerField(null=True, blank=True)
+    travelers_limit = models.IntegerField(null=True, blank=True)
+  
+    def __str__(self):
+        return f"{self.subscriptionType.capitalize()} - ${self.price}"
+    
+
+
+class AgencyPayment(models.Model):
+    agency = models.ForeignKey(Agency, on_delete=models.CASCADE, related_name="payments")
+    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("paid", "Paid"),
+        ("failed", "Failed"),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.agency} - {self.subscription} - {self.status}"

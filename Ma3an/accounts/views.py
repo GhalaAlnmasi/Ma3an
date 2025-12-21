@@ -4,6 +4,8 @@ from django.contrib.auth import authenticate, login, logout
 from .models import Traveler, Agency, TourGuide, Language, Notification
 from django.contrib import messages
 import pycountry
+import random
+import string
 
 from django.conf import settings
 User = settings.AUTH_USER_MODEL
@@ -56,7 +58,6 @@ def signup_view(request : HttpRequest):
         return redirect("accounts:signin_view")
     return render(request, "accounts/signup.html",
                   {"countries": countries} 
-                  #{"countries": list(countries)}
                   )
 
 
@@ -113,6 +114,23 @@ def signup_tourguide_view(request):
     })
 
 
+def generate_temp_password(length=8):
+    letters = string.ascii_letters + string.digits
+    return ''.join(random.choice(letters) for i in range(length))
+
+
+def add_tourguide(request : HttpRequest):
+    temp_password = generate_temp_password()
+
+    user = User.objects.create_user(
+        email=request.POST["email"],
+        password=temp_password,
+        role="tourguide"
+    )
+
+    messages.success(request, "Tour Guide account created successfully. Login details sent by email.")
+    return redirect("agency_dashboard")
+
         
 def signin_view(request : HttpRequest):
     
@@ -144,3 +162,16 @@ def mark_notification_read(request, pk):
 
     next_url = request.GET.get("next")
     return redirect(next_url)
+
+
+def profile_view(request):
+    user = request.user
+
+    if user.role == "traveler":
+        template = "accounts/traveler_profile.html"
+    elif user.role == "agency":
+        template = "accounts/agency_profile.html"
+    else:
+        return redirect("home")
+
+    return render(request, template, {"user": user})
