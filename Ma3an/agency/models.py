@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+# from accounts.models import TourGuide
 from accounts.models import TourGuide
+
 
 
 # class Agency(models.Model):
@@ -28,12 +30,7 @@ class Tour(models.Model):
     end_date = models.DateField()
     days = models.PositiveIntegerField(default=1)  # عدد الأيام
 
-    tour_guide = models.ForeignKey(
-        TourGuide,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+    tour_guide = models.ForeignKey("accounts.TourGuide", on_delete=models.SET_NULL, null=True, blank=True)
     image = models.ImageField(upload_to='tour_images/', null=True, blank=True)
 
     def __str__(self):

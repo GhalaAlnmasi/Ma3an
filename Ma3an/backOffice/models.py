@@ -9,7 +9,7 @@ class Profile(models.Model):
         ('traveler', 'Traveler'),
     )
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    # user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 
@@ -48,7 +48,7 @@ class TravelAgency(models.Model):
     
 
 class Notification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # user = models.ForeignKey(User, on_delete=models.CASCADE)
     notification_type = models.CharField(max_length=50)
     title = models.CharField(max_length=255)
     message = models.TextField()
@@ -87,7 +87,7 @@ def manage_agencies(request):
 
     agencies = agencies.order_by('-id')
 
-    return render(request, 'backOffice/agencies.html', {
+    return render(request, 'agencies.html', {
         'agencies': agencies,
         'q': q
     })

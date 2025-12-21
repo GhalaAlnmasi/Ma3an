@@ -2,14 +2,12 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.db import models
-from agency.models import GeofenceEvent
+# from agency.models import GeofenceEvent
 
 
 class User(AbstractUser):
     email = models.EmailField(unique=True, blank=False)
-
     USERNAME_FIELD = 'email' 
-
     REQUIRED_FIELDS = ['username']
     
     groups = models.ManyToManyField( 
@@ -73,6 +71,15 @@ class Agency(models.Model):
         choices=ApprovalStatus.choices,
         default=ApprovalStatus.PENDING
     )
+    # subscription = models.ForeignKey(
+    #     Subscription,
+    #     on_delete=models.SET_NULL,
+    #     null=True,
+    #     blank=True
+    # )
+    # rejected = models.BooleanField(default=False)
+    rejection_reason = models.TextField(blank=True)
+
 
     def __str__(self):
         return self.agency_name
@@ -110,7 +117,7 @@ class TourGuide(models.Model):
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
 
-    event = models.ForeignKey(GeofenceEvent, on_delete=models.CASCADE, related_name="notifications")
+    event = models.ForeignKey("agency.GeofenceEvent", on_delete=models.CASCADE, related_name="notifications")
 
     message = models.TextField()
     is_read = models.BooleanField(default=False)
