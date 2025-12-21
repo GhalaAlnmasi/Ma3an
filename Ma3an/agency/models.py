@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from accounts.models import TourGuide
+from django.db import models
+
 
 
 # class Agency(models.Model):
@@ -109,3 +111,21 @@ class GeofenceEvent(models.Model):
 
     def __str__(self):
         return f"{self.traveler} {self.event_type} {self.geofence}"
+
+
+#Subscription
+
+class Subscription(models.Model):
+    PLAN_CHOICES = [
+        ('basic', 'Basic'),
+        ('standard', 'Standard'),
+        ('premium', 'Premium'),
+    ]
+    subscriptionType = models.CharField(max_length=20, choices=PLAN_CHOICES)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    tours_limit = models.IntegerField(null=True, blank=True)
+    supervisors_limit = models.IntegerField(null=True, blank=True)
+    travelers_limit = models.IntegerField(null=True, blank=True)
+  
+    def __str__(self):
+        return f"{self.subscriptionType.capitalize()} - ${self.price}"
