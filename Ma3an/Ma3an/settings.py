@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django_countries',
     'traveler',
     'agency',
+    'backOffice',
 ]
 
 MIDDLEWARE = [

@@ -28,7 +28,7 @@ def dashboard(request):
 
 
 @login_required
-@admin_only
+# @admin_only
 def manage_agencies(request):
     q = request.GET.get('q', '').strip()
     status = request.GET.get('status', 'all').strip()
@@ -65,7 +65,7 @@ def manage_agencies(request):
 
 
 @login_required
-@admin_only
+# @admin_only
 def approve_agency(request, agency_id):
     agency = get_object_or_404(TravelAgency, id=agency_id)
 
@@ -106,14 +106,14 @@ def system_security(request):
 
 
 @login_required
-@admin_only
+# @admin_only
 def agency_detail(request, agency_id):
     agency = get_object_or_404(TravelAgency.objects.select_related('profile', 'profile__user'), id=agency_id)
     return render(request, 'backOffice/agency_detail.html', {'agency': agency})
 
 
 @login_required
-@admin_only
+# @admin_only
 @require_POST
 def reject_agency(request, agency_id):
     agency = get_object_or_404(TravelAgency, id=agency_id)

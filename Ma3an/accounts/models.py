@@ -2,14 +2,11 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.db import models
-from agency.models import GeofenceEvent
 
 
 class User(AbstractUser):
     email = models.EmailField(unique=True, blank=False)
-
     USERNAME_FIELD = 'email' 
-
     REQUIRED_FIELDS = ['username']
     
     groups = models.ManyToManyField( 
@@ -39,19 +36,21 @@ class User(AbstractUser):
 class GenderChoices(models.TextChoices):
     MALE = 'male', 'Male'
     FEMALE = 'female', 'Female'
-        
+
         
 class Traveler(models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE, related_name = 'traveler_profile')
     date_of_birth = models.DateField(null=True, blank=True)
-    phone_number = models.CharField(max_length=20, blank=True)
+    phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     gender = models.CharField(
         max_length=10,
-        choices = GenderChoices.choices
+        choices = GenderChoices.choices,
+        null=True,
+        blank=True
     )
-    nationality = models.CharField(max_length=3)  
-    passport_number = models.CharField(max_length = 20, unique = True)
-    passport_expiry_date = models.DateField()
+    nationality = models.CharField(max_length=3, null=True, blank=True)  
+    passport_number = models.CharField(max_length = 20, unique = True, null=True, blank=True)
+    passport_expiry_date = models.DateField(null=True, blank=True)
     
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
@@ -63,16 +62,25 @@ class Agency(models.Model):
         APPROVED = 'approved', 'Approved'
         REJECTED = 'rejected', 'Rejected'
         
-    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name="agency_profile")
-    agency_name = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=50)
-    city = models.CharField(max_length=100)
-    commercial_license = models.CharField(max_length=100)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="agency_profile")
+    agency_name = models.CharField(max_length=255, null=True, blank=True)
+    phone_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    commercial_license = models.CharField(max_length=100, null=True, blank=True)
     approval_status = models.CharField(
         max_length=20,
         choices=ApprovalStatus.choices,
         default=ApprovalStatus.PENDING
     )
+    # subscription = models.ForeignKey(
+    #     Subscription,
+    #     on_delete=models.SET_NULL,
+    #     null=True,
+    #     blank=True
+    # )
+    # rejected = models.BooleanField(default=False)
+    rejection_reason = models.TextField(null=True, blank=True)
+
 
     def __str__(self):
         return self.agency_name
@@ -88,20 +96,23 @@ class Language(models.Model):
     def __str__(self):
         return self.name
     
+    
 class TourGuide(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     agency = models.ForeignKey(Agency, on_delete=models.CASCADE, related_name="tour_guides")
     gender = models.CharField(
         max_length=10,
-        choices = GenderChoices.choices
+        choices = GenderChoices.choices,
+        null=True,
+        blank=True
     )
-    phone = models.CharField(max_length=50, blank=True, null=True)
-    languages = models.ManyToManyField(Language, related_name="tour_guides")
+    phone = models.CharField(max_length=50, unique=True,blank=True, null=True)
+    languages = models.ManyToManyField(Language, related_name="tour_guides", null=True, blank=True)
     # languages = models.CharField(max_length=255)
-    nationality = models.CharField(max_length=3)
-    passport_number = models.CharField(max_length = 20, unique = True)
-    passport_expiry_date = models.DateField()
-    is_active = models.BooleanField(default=True)
+    nationality = models.CharField(max_length=3, null=True, blank=True)
+    passport_number = models.CharField(max_length = 20, unique=True, null=True, blank=True)
+    passport_expiry_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
@@ -110,7 +121,7 @@ class TourGuide(models.Model):
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
 
-    event = models.ForeignKey(GeofenceEvent, on_delete=models.CASCADE, related_name="notifications")
+    event = models.ForeignKey("agency.GeofenceEvent", on_delete=models.CASCADE, related_name="notifications")
 
     message = models.TextField()
     is_read = models.BooleanField(default=False)
