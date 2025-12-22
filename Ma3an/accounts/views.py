@@ -226,21 +226,6 @@ def tourguide_profile_view(request):
 
 
 def create_tourguide_view(request : HttpRequest):
-    # temp_password = generate_temp_password()
-
-    # user = User.objects.create_user(
-    #     email=request.POST["email"],
-    #     password=temp_password,
-    #     role="tourguide"
-    # )
-
-    # messages.success(request, "Tour Guide account created successfully. Login details sent by email.")
-    # return redirect("agency_dashboard")
-    
-     # صلاحية: لازم يكون Agency
-    # if request.user.role != "agency":
-    #     messages.error(request, "Only agencies can create tour guides.")
-    #     return redirect("accounts:signin_view")
 
     countries = [(c.alpha_2, c.name) for c in pycountry.countries]
     languages_list = Language.objects.all()
@@ -272,6 +257,7 @@ def create_tourguide_view(request : HttpRequest):
         "languages": languages_list,
     })
 
+        
         
 def signin_view(request : HttpRequest):
     
