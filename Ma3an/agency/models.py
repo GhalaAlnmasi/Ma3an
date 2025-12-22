@@ -1,25 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import User
-# from accounts.models import TourGuide
-from accounts.models import TourGuide, Agency
-# from accounts.models import Agency
-# , Subscription
+from accounts.models import Agency
 
-
-
-# class Agency(models.Model):
-#     name = models.CharField(max_length=200)
-#     owner = models.OneToOneField(User, on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return self.name
-
-# class TourGuide(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
-#     phone = models.CharField(max_length=20, blank=True, null=True)
-
-#     def __str__(self):
-#         return self.user.username
 
 class Tour(models.Model):
     name = models.CharField(max_length=200)
@@ -37,7 +18,12 @@ class Tour(models.Model):
     end_date = models.DateField()
     days = models.PositiveIntegerField(default=1)
 
-    tour_guide = models.ForeignKey("accounts.TourGuide", on_delete=models.SET_NULL, null=True, blank=True)
+    tour_guide = models.ForeignKey(
+        "accounts.TourGuide",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
     image = models.ImageField(upload_to='tour_images/', null=True, blank=True)
 
     def __str__(self):
@@ -85,6 +71,12 @@ class GeofenceEvent(models.Model):
         ("enter", "Enter"),
         ("exit", "Exit"),
     ]
+
+    tour_guide = models.ForeignKey(
+        "accounts.TourGuide",
+        on_delete=models.CASCADE,
+        related_name="geofence_events"
+    )
 
     traveler = models.ForeignKey(
         "accounts.Traveler",
