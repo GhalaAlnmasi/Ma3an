@@ -1,32 +1,31 @@
 {% extends 'main/base.html' %}
 {% load static %}
 
-
-
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/agency.css' %}">
+
 <div class="container mt-4">
     <!-- Multi Step Header -->
     <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center text-center">
 
-            <div class="step completed">
-                <div class="circle">1</div>
-                <small>Tour Info</small>
-            </div>
+            <div class="step {% if current_step > 1 %}completed{% endif %} {% if current_step == 1 %}active{% endif %}">
+    <div class="circle">1</div>
+    <small>Tour Info</small>
+</div>
+<div class="line {% if current_step > 1 %}completed{% endif %}"></div>
 
-            <div class="line completed"></div>
+<div class="step {% if current_step > 2 %}completed{% endif %} {% if current_step == 2 %}active{% endif %}">
+    <div class="circle">2</div>
+    <small>Schedule</small>
+</div>
+<div class="line {% if current_step > 2 %}completed{% endif %}"></div>
 
-            <div class="step active">
-                <div class="circle">2</div>
-                <small>Schedule</small>
-            </div>
+<div class="step {% if current_step == 3 %}active{% endif %}">
+    <div class="circle">3</div>
+    <small>Confirm</small>
+</div>
 
-            <div class="line"></div>
-
-            <div class="step">
-                <div class="circle">3</div>
-                <small>Confirm</small>
-            </div>
         </div>
     </div>
     
@@ -61,9 +60,17 @@
                     
                     <label>Location Name</label>
                     <input type="text" name="day_{{ day }}_location_name[]" class="form-control">
+
+                   <label>Latitude</label>
+                   <input type="text" name="day_{{ day }}_latitude[]" class="form-control">
+
+                   <label>Longitude</label>
+                   <input type="text" name="day_{{ day }}_longitude[]" class="form-control">
+
                     
                     <label>Location URL</label>
                     <input type="url" name="day_{{ day }}_location_url[]" class="form-control">
+                    
                     
                     <label>Description</label>
                     <textarea name="day_{{ day }}_description[]" class="form-control" rows="3"></textarea>

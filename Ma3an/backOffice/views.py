@@ -2,10 +2,17 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Q
+<<<<<<< HEAD
 from django.views.decorators.http import require_POST
 
 from accounts.models import Agency, Notification
 from agency.models import Subscription, AgencySubscription
+=======
+from accounts.models import Agency, Traveler, Notification
+from backOffice.decorators import admin_only
+# from backOffice.models import TravelAgency, Notification, Profile
+from agency.models import Subscription
+>>>>>>> f770c032a0dc4351575068884cab2a1c3865de5a
 
 from backOffice.decorators import admin_only
 
