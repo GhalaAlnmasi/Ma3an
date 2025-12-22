@@ -12,4 +12,7 @@ urlpatterns = [
     path("subscriptions/", views.manage_subscriptions, name="manage_subscriptions"),
     path("users/", views.users_list, name="users_list"),
     path("security/", views.system_security, name="system_security"),
+    path("subscriptions/", views.manage_subscriptions, name="manage_subscriptions"),
+    path("subscriptions/edit/<int:sub_id>/", views.edit_subscription, name="edit_subscription"),
+    path("subscriptions/renew/<int:sub_id>/", views.renew_subscription, name="renew_subscription"),
 ]
