@@ -16,7 +16,6 @@
 
 
 from django.http import HttpResponseForbidden
-from accounts.models import User
 
 def admin_only(view_func):
     """
