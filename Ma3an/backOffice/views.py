@@ -3,9 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.views.decorators.http import require_POST
-
-from accounts.models import Agency, Notification
+from accounts.models import Agency, Traveler, Notification
+from backOffice.decorators import admin_only
+# from backOffice.models import TravelAgency, Notification, Profile
 from agency.models import Subscription
 
 from backOffice.decorators import admin_only
