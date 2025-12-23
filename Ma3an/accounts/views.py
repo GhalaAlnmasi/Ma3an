@@ -1,81 +1,69 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpRequest
 from django.contrib.auth import authenticate, login, logout
-from .forms import UserForm, TravelerForm, AgencyForm, TourGuideCreateForm
+from .forms import UserForm, TravelerForm, AgencyForm
 from .models import Traveler, Agency, TourGuide, Language, Notification
 from django.contrib import messages
 import pycountry
-
 # import random
 # import string
 from django.contrib.auth.decorators import login_required
 from django.utils.crypto import get_random_string
 
-# from django.conf import settings
-# User = settings.AUTH_USER_MODEL
+from django.conf import settings
+User = settings.AUTH_USER_MODEL
 
-from django.contrib.auth import get_user_model
+# from django_countries import countries
 
-
-User = get_user_model()
 
 # Create your views here.
 
-def signup_traveler_view(request):
-    if not request.user.is_authenticated or request.user.role != "agency":
-        messages.error(request, "Only agencies can create tour guides.")
-        return redirect("accounts:signin_view")
+def signup_view(request):
+    countries = [(c.alpha_2, c.name) for c in pycountry.countries]
 
     if request.method == "POST":
-        email = request.POST["email"]
-        password = request.POST["password"]
+        role = request.POST.get("role")
 
-        user = User.objects.create_user(
-            email=email,
-            username=email,
-            password=password,
-            role="tourGuide"
-        )
-
-        TourGuide.objects.create(
-            user=user,
-            agency=request.user.agency_profile,
-            is_active=True
-        )
-
-        messages.success(request, "Tour guide created successfully.")
-        return redirect("agency:dashboard")
-
-    return render(request, "accounts/create_tourguide.html")
-
-
-
-def signup_agency_view(request):
-    if request.method == "POST":
-        user_form = UserForm(request.POST)
-        agency_form = AgencyForm(request.POST)
-
-        if user_form.is_valid() and agency_form.is_valid():
+        user_form = UserForm(request.POST)  # إنشاء الفورم للـ POST
+        if user_form.is_valid():
             user = user_form.save(commit=False)
             user.set_password(user_form.cleaned_data["password"])
-            user.role = "agency"
+            user.role = role
             user.save()
 
-            agency = agency_form.save(commit=False)
-            agency.user = user
-            agency.approval_status = "pending"
-            agency.save()
+            if role == "traveler":
+                traveler_form = TravelerForm(request.POST)
+                if traveler_form.is_valid():
+                    traveler = traveler_form.save(commit=False)
+                    traveler.user = user
+                    traveler.save()
+                else:
+                    messages.error(request, traveler_form.errors)
+                    return render(request, "accounts/signup.html", {"countries": countries, "user_form": user_form})
 
-            messages.success(request, "Agency account created successfully.")
+            elif role == "agency":
+                agency_form = AgencyForm(request.POST)
+                if agency_form.is_valid():
+                    agency = agency_form.save(commit=False)
+                    agency.user = user
+                    agency.approval_status = "pending"
+                    agency.save()
+                else:
+                    messages.error(request, agency_form.errors)
+                    return render(request, "accounts/signup.html", {"countries": countries, "user_form": user_form})
+
+            messages.success(request, "Account created successfully")
             return redirect("accounts:signin_view")
-    else:
-        user_form = UserForm()
-        agency_form = AgencyForm()
+        else:
+            messages.error(request, user_form.errors)
 
-    return render(request, "accounts/agency_signup.html", {
-        "user_form": user_form,
-        "agency_form": agency_form,
-    })
+    else:
+        # إنشاء الفورم للـ GET حتى لا يكون undefined
+        user_form = UserForm()
+
+    return render(request, "accounts/signup.html", {"countries": countries, "user_form": user_form})
+
+
 
 
 # def tourguide_profile_view(request):
@@ -178,39 +166,53 @@ def tourguide_profile_view(request):
 #     return ''.join(random.choice(letters) for i in range(length))
 
 
-def create_tourguide_view(request: HttpRequest):
+def create_tourguide_view(request : HttpRequest):
+    # temp_password = generate_temp_password()
 
-    if not request.user.is_authenticated or request.user.role != "agency":
+    # user = User.objects.create_user(
+    #     email=request.POST["email"],
+    #     password=temp_password,
+    #     role="tourguide"
+    # )
+
+    # messages.success(request, "Tour Guide account created successfully. Login details sent by email.")
+    # return redirect("agency_dashboard")
+    
+     # صلاحية: لازم يكون Agency
+    if request.user.role != "agency":
         messages.error(request, "Only agencies can create tour guides.")
         return redirect("accounts:signin_view")
 
+    countries = [(c.alpha_2, c.name) for c in pycountry.countries]
+    languages_list = Language.objects.all()
+
     if request.method == "POST":
-        form = TourGuideCreateForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data["email"]
-            password = form.cleaned_data["password"]
+        temp_password = get_random_string(10)
 
-            user = User.objects.create_user(
-                email=email,
-                username=email,
-                password=password,
-                role="tourGuide"
-            )
+        user = User.objects.create_user(
+            email=request.POST["email"],
+            username=request.POST["email"],
+            password=temp_password,
+            role="tourGuide"
+        )
 
-            TourGuide.objects.create(
-                user=user,
-                agency=request.user.agency_profile,
-                is_active=True
-            )
+        tour_guide = TourGuide.objects.create(
+            user=user,
+            agency=request.user.agency_profile,
+            is_active=True
+        )
 
-            messages.success(request, "Tour guide created successfully.")
-            return redirect("main:home_view")
-    else:
-        form = TourGuideCreateForm()
+        messages.success(
+            request,
+            "Tour guide created successfully. Login details sent by email."
+        )
+        return redirect("agency_dashboard")
 
-    return render(request, "accounts/create_tourguide.html", {"form": form})
-        
-        
+    return render(request, "accounts/create_tourguide.html", {
+        "countries": countries,
+        "languages": languages_list,
+    })
+
         
 def signin_view(request : HttpRequest):
     
@@ -226,7 +228,6 @@ def signin_view(request : HttpRequest):
             messages.error(request, "Please try again, your info is wrong", "alert-danger")
      
     return render(request, "accounts/signin.html", {})
-
 
 
 def log_out_view(request : HttpRequest):

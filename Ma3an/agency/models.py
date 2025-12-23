@@ -1,8 +1,13 @@
 from django.db import models
-from accounts.models import Agency
 
 
 class Tour(models.Model):
+    agency = models.ForeignKey(
+    "accounts.Agency",  # <- هنا نصية بدل استيراد مباشر
+    on_delete=models.CASCADE,
+    related_name="tours"
+)
+
     name = models.CharField(max_length=200)
     description = models.TextField()
     country = models.CharField(max_length=100)
@@ -121,17 +126,29 @@ class Subscription(models.Model):
     
 
 
+
 class AgencyPayment(models.Model):
-    agency = models.ForeignKey(Agency, on_delete=models.CASCADE, related_name="payments")
+    agency = models.ForeignKey("accounts.Agency", on_delete=models.CASCADE)
     subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
-    amount = models.DecimalField(max_digits=8, decimal_places=2)
-    STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("paid", "Paid"),
-        ("failed", "Failed"),
-    ]
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+
+    class Status(models.TextChoices):
+        INITIATED = "initiated", "Initiated"
+        PAID = "paid", "Paid"
+        FAILED = "failed", "Failed"
+
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.INITIATED)
+    amount = models.IntegerField(help_text="Amount in halalas")
+    currency = models.CharField(max_length=3, default="SAR")
+    
+    # زيادة طول المعرفات والروابط لتفادي أخطاء قاعدة البيانات
+    moyasar_id = models.CharField(max_length=128, blank=True, null=True, unique=True)
+    transaction_url = models.URLField(max_length=1000, blank=True, null=True) 
+    
+    raw = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    description = models.CharField(max_length=255, blank=True, default="")
 
     def __str__(self):
-        return f"{self.agency} - {self.subscription} - {self.status}"
+        # إضافة تأمين في حال كان الاسم فارغاً
+        agency_name = getattr(self.agency, 'agency_name', 'Unknown Agency')
+        return f"{agency_name} - {self.subscription} - {self.status}"

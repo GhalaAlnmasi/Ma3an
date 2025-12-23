@@ -1,37 +1,43 @@
 {% extends "main/base.html" %}
 {% load static %}
 
-{% block title %} Sign up - Ma3an {% endblock %}
-
-
 {% block content %}
 <div class="container mt-5">
-    <h2>Sign Up - Traveler</h2>
-    <hr>
-
-    <form method="post">
-        {% csrf_token %}
-
-        <h4>User Information</h4>
-        {{ user_form.as_p }}
-
-        <h4>Traveler Information</h4>
-        {{ traveler_form.as_p }}
-
-        <button type="submit" class="btn btn-primary mt-3">Sign Up</button>
-    </form>
-
-    {% if user_form.errors %}
-        <div class="alert alert-danger mt-3">
-            {{ user_form.errors }}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Sign Up</h2>
+                    <form action="{% url 'accounts:signup_traveler' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <input type="email" class="form-control" placeholder="Email" name="email" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Username" name="username" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="First Name" name="first_name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Last Name" name="last_name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <input type="password" class="form-control" placeholder="Password" name="password" required>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Sign Up</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-    {% endif %}
-    {% if traveler_form.errors %}
-        <div class="alert alert-danger mt-3">
-            {{ traveler_form.errors }}
-        </div>
-    {% endif %}
+    </div>
 </div>
-
-
 {% endblock %}
