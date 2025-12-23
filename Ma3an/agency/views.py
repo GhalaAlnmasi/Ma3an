@@ -9,6 +9,8 @@ from django.urls import reverse
 from .models import Subscription, AgencyPayment
 from accounts.models import Agency
 from django.contrib.auth.decorators import login_required
+from accounts.models import TourGuide
+
 # -------------------------
 # Agency Views
 # -------------------------
@@ -145,73 +147,72 @@ def add_tour_view(request):
         try:
             start_date = datetime.strptime(request.POST.get('start_date'), "%Y-%m-%d").date()
             end_date = datetime.strptime(request.POST.get('end_date'), "%Y-%m-%d").date()
-            
-            if start_date > end_date:
-                messages.error(request, "❌ Start date cannot be after the end date.")
-            else:
-                # 3. Create Tour only if all checks pass
-                tour = Tour.objects.create(
-                    name=name, description=description, country=country, city=city,
-                    travelers=travelers, price=price, start_date=start_date,
-                    end_date=end_date, agency=agency
-                )
-                messages.success(request, "✅ Tour created successfully!")
-                return redirect('agency:add_schedule', tour_id=tour.id)
         except ValueError:
-            messages.error(request, "❌ Invalid date format.")
+            messages.error(request, "❌ تنسيق التواريخ غير صحيح")
+            return render(request, 'agency/add_tour.html', {
+                'name': name,
+                'description': description,
+                'country': country,
+                'city': city,
+                'travelers': travelers,
+                'price': price,
+                'start_date': request.POST.get('start_date'),
+                'end_date': request.POST.get('end_date'),
+                
+            })
+            
+    # adding tour guide        
+    tour_guides = TourGuide.objects.filter(agency=request.user.agency_profile)
+    # filtering tour guides according to start and end dates of their tours
+    if start_date_str and end_date_str:
+        try:
+            new_start = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            new_end = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+            tour_guides = tour_guides.exclude(
+                tour__start_date__lte=new_end,
+                tour__end_date__gte=new_start
+            ).distinct()
+        except ValueError:
+            pass
+
+        if start_date > end_date:
+            messages.error(request, "❌ تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية")
+            return render(request, 'agency/add_tour.html', {
+                'name': name,
+                'description': description,
+                'country': country,
+                'city': city,
+                'travelers': travelers,
+                'price': price,
+                'start_date': request.POST.get('start_date'),
+                'end_date': request.POST.get('end_date'),
+            })
+
+        # إنشاء الرحلة بدون TourGuide
+        tour = Tour.objects.create(
+            name=name,
+            description=description,
+            country=country,
+            city=city,
+            travelers=travelers,
+            price=price,
+            start_date=start_date,
+            end_date=end_date,
+            agency=agency,
+        )
+
+        messages.success(request, "✅ تم إنشاء الرحلة")
+        return redirect('agency:add_schedule', tour_id=tour.id)
+
 
     return render(request, 'agency/add_tour.html', {
-        'start_date': start_date_str, 'end_date': end_date_str, 'current_step': 1
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+        'current_step': 1,
+        'tour_guides': tour_guides,
     })
 
-@login_required
-def edit_tour_view(request, tour_id):
-    # نستخدم agency_profile لضمان أن الوكيل يعدل رحلاته فقط
-    tour = get_object_or_404(Tour, id=tour_id, agency=request.user.agency_profile)
-    plan = request.user.agency_profile.subscription
-
-    if request.method == "POST":
-        # 1. جلب البيانات من الفورم (تأكد أن الـ name في HTML مطابق لهذه الكلمات)
-        name = request.POST.get('tourName')
-        description = request.POST.get('description')
-        country = request.POST.get('country')
-        city = request.POST.get('city')
-        travelers = int(request.POST.get('travelers') or 0)
-        price = float(request.POST.get('price') or 0)
-
-        # 2. التحقق من حدود الباقة (Travelers Limit)
-        if plan and plan.travelers_limit is not None and travelers > plan.travelers_limit:
-            messages.error(request, f"❌ Your plan allows a maximum of {plan.travelers_limit} travelers.")
-            return render(request, 'agency/edit_tour.html', {'tour': tour})
-
-        # 3. تحديث بيانات الكائن (Object)
-        tour.name = name
-        tour.description = description
-        tour.country = country
-        tour.city = city
-        tour.travelers = travelers
-        tour.price = price
-
-        # 4. تحديث الصورة إذا تم رفع صورة جديدة
-        if 'tourImage' in request.FILES:
-            tour.image = request.FILES['tourImage']
-
-        tour.save()
-        
-        messages.success(request, "✅ Tour updated successfully!")
-        return redirect('agency:all_tours')
-
-    return render(request, 'agency/edit_tour.html', {'tour': tour})
-
-@login_required
-def delete_tour_view(request, tour_id):
-    # نستخدم get_object_or_404 لضمان الأمان ووجود الرحلة
-    tour = get_object_or_404(Tour, id=tour_id, agency=request.user.agency_profile)
-    
-    tour.delete()
-    messages.success(request, "✅ Tour deleted successfully!")
-    
-    return redirect('/agency/all-tours/') 
 
 
 def all_tours_view(request):
@@ -287,7 +288,51 @@ def tour_detail_view(request, tour_id):
         'current_step': 3
         
     })
+@login_required
+def edit_tour_view(request, tour_id):
+    # جلب الرحلة والتأكد أنها تابعة لهذه الوكالة فقط
+    tour = get_object_or_404(Tour, id=tour_id, agency=request.user.agency_profile)
+    
+    if request.method == 'POST':
+        # تحديث البيانات من الفورم
+        tour.name = request.POST.get('name')
+        tour.description = request.POST.get('description')
+        tour.country = request.POST.get('country')
+        tour.city = request.POST.get('city')
+        tour.travelers = int(request.POST.get('travelers') or 0)
+        tour.price = float(request.POST.get('price') or 0)
+        
+        # إذا تم رفع صورة جديدة
+        if 'image' in request.FILES:
+            tour.image = request.FILES['image']
+            
+        # تحديث التورقايد
+        guide_id = request.POST.get('tour_guide')
+        tour.tour_guide_id = guide_id if guide_id else None
+        
+        tour.save()
+        messages.success(request, "✅ تم تحديث بيانات الرحلة بنجاح")
+        return redirect('agency:my_tours')
 
+    # جلب التورقايدز المتاحين لعرضهم في فورم التعديل
+    tour_guides = TourGuide.objects.filter(agency=request.user.agency_profile)
+    
+    return render(request, 'agency/edit_tour.html', {
+        'tour': tour,
+        'tour_guides': tour_guides
+    })
+@login_required
+def delete_tour_view(request, tour_id):
+    # جلب الرحلة والتأكد أنها تابعة لوكالة المستخدم الحالي فقط لزيادة الأمان
+    tour = get_object_or_404(Tour, id=tour_id, agency=request.user.agency_profile)
+    
+    if request.method == 'POST':
+        tour.delete()
+        messages.success(request, "✅ تم حذف الرحلة بنجاح.")
+        return redirect('agency:my_tours')
+    
+    # في حال محاولة الوصول للدالة عبر GET (رابط مباشر)
+    return redirect('agency:my_tours')
 # -------------------------
 # Tour Schedule Views
 # -------------------------
