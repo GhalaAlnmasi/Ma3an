@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import TourSchedule
+from .models import Subscription, AgencyPayment, Tour, TourSchedule
 
 @admin.register(TourSchedule)
 class TourScheduleAdmin(admin.ModelAdmin):
@@ -18,3 +18,10 @@ class TourScheduleAdmin(admin.ModelAdmin):
         "latitude",
         "longitude",
     )
+
+
+# تسجيل الموديلات لتظهر في لوحة الإدارة
+admin.site.register(Subscription)
+admin.site.register(AgencyPayment)
+admin.site.register(Tour)
+admin.site.register(TourSchedule)
