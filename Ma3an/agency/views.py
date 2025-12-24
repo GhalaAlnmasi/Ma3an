@@ -147,9 +147,6 @@ def agency_payment_view(request):
     return render(request, 'agency/agency_payment.html')
 
 
-
-
-
 # -------------------------
 # Tour Views
 # -------------------------
@@ -338,9 +335,6 @@ def add_tour_view(request):
 """
 @login_required
 def add_tour_view(request):
-    start_date = None
-    end_date = None
-
     agency = request.user.agency_profile
     plan = agency.subscription_record
 
@@ -348,22 +342,9 @@ def add_tour_view(request):
     # Handle GET dates
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
-
-    # إضافة Tour Guides للعرض في الـ dropdown
+    
+    # ⭐⭐⭐ نقلنا تعريف tour_guides هنا ليكون متاحاً دائماً
     tour_guides = TourGuide.objects.filter(agency=agency)
-
-    # فلترة Tour Guides حسب تواريخ الرحلات إن وجدت
-    if start_date_str and end_date_str:
-        try:
-            new_start = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            new_end = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
-            tour_guides = tour_guides.exclude(
-                tour__start_date__lte=new_end,
-                tour__end_date__gte=new_start
-            ).distinct()
-        except ValueError:
-            pass
 
     if request.method == "POST":
         name = request.POST.get('name')
@@ -372,12 +353,17 @@ def add_tour_view(request):
         city = request.POST.get('city')
         travelers = int(request.POST.get('travelers') or 0)
         price = float(request.POST.get('price') or 0)
+        
+        # --- التحقق الصارم من عدد المسافرين المسموح به في الرحلة الواحدة ---
+        if plan.travelers_limit is not None and travelers > plan.travelers_limit:
+            messages.error(request, f"❌ Plan Error: Your plan allows a maximum of {plan.travelers_limit} travelers per tour.")
+            return render(request, 'agency/add_tour.html', {
+                'name': name, 'description': description, 'country': country, 
+                'city': city, 'travelers': travelers, 'price': price,
+                'start_date': request.POST.get('start_date'), 'end_date': request.POST.get('end_date'),
+                'current_step': 1, 'tour_guides': tour_guides
+            })
 
-        # اختيار الـ Tour Guide
-        tour_guide_id = request.POST.get('tour_guide')
-        tour_guide = TourGuide.objects.filter(id=tour_guide_id).first() if tour_guide_id else None
-
-        # التحقق من التواريخ
         try:
             start_date = datetime.strptime(request.POST.get('start_date'), "%Y-%m-%d").date()
             end_date = datetime.strptime(request.POST.get('end_date'), "%Y-%m-%d").date()
@@ -411,49 +397,26 @@ def add_tour_view(request):
         except (ValueError, TypeError):
             messages.error(request, "❌ Error: Invalid date format.")
             return render(request, 'agency/add_tour.html', {
-                'name': name,
-                'description': description,
-                'country': country,
-                'city': city,
-                'travelers': travelers,
-                'price': price,
-                'start_date': request.POST.get('start_date'),
-                'end_date': request.POST.get('end_date'),
-                'current_step': 1,
-                'tour_guides': tour_guides,
+                'name': name, 'description': description, 'country': country, 
+                'city': city, 'travelers': travelers, 'price': price,
+                'start_date': request.POST.get('start_date'), 'end_date': request.POST.get('end_date'),
+                'current_step': 1, 'tour_guides': tour_guides
             })
+            
+    # adding tour guide 
+    # filtering tour guides according to start and end dates of their tours
+    # (هذا الجزء يعمل في حالة الـ GET لفلترة القائمة المعروضة)
+    if start_date_str and end_date_str:
+        try:
+            new_start = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            new_end = datetime.strptime(end_date_str, "%Y-%m-%d").date()
 
-        if start_date > end_date:
-            messages.error(request, "❌ تاريخ البداية لا يمكن أن يكون بعد تاريخ النهاية")
-            return render(request, 'agency/add_tour.html', {
-                'name': name,
-                'description': description,
-                'country': country,
-                'city': city,
-                'travelers': travelers,
-                'price': price,
-                'start_date': request.POST.get('start_date'),
-                'end_date': request.POST.get('end_date'),
-                'current_step': 1,
-                'tour_guides': tour_guides,
-            })
-
-        # ✅ إنشاء الرحلة مع Tour Guide
-        tour = Tour.objects.create(
-            name=name,
-            description=description,
-            country=country,
-            city=city,
-            travelers=travelers,
-            price=price,
-            start_date=start_date,
-            end_date=end_date,
-            agency=agency,
-            tour_guide=tour_guide
-        )
-
-        messages.success(request, "✅ تم إنشاء الرحلة")
-        return redirect('agency:add_schedule', tour_id=tour.id)
+            tour_guides = tour_guides.exclude(
+                tour__start_date__lte=new_end,
+                tour__end_date__gte=new_start
+            ).distinct()
+        except ValueError:
+            pass
 
     return render(request, 'agency/add_tour.html', {
         'start_date': start_date_str,
